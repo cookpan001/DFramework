@@ -1,1 +1,37 @@
-1. 连接池依赖swoole扩展
+DFramework
+
+兼容swoole与非swoole的PHP轻型框架, 支持分库与分表逻辑，同时实现了简易的MySQL连接池中间件.
+
+测试:
+1. 本地安装ＭySQL
+1.1 配置
+    <rootpath>/config/db.json
+    <rootpath>/config/tables.json
+{
+    "user": {
+        "database": {
+            "test": 1//表示库test中, user表有一张
+        },
+        "num": 1,//总表数
+        "primary": "id",//分表键
+        "type": "mod"//分表方法，取模
+    },
+    "goods": {
+        "database": {
+            "test": 2//表示库test中, goods表有一张
+        },
+        "num": 2,
+        "primary": "id",
+        "type": "mod",
+        "step": 1
+    }
+}
+2. 启动httpserver
+php <rootpath>/server/httpserver.php
+3. 启动连接池
+php <rootpath>/server/mysqlpool.php
+
+4. 测试地址
+
+连接池地址: http://127.0.0.1:9501/sale/api/Index/goods
+非连接池: http://127.0.0.1:9501/sale/api/Index/user

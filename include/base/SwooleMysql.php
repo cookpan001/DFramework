@@ -1,14 +1,12 @@
 <?php
 namespace DF\Base;
 
-class Mysql
+class SwooleMysql
 {
     private $config;
-    private $server = null;
-    private $link = null;
-    private $errno = 0;
-    private $error = '';
-    private $db = '';
+    private $client = null;
+    private $affected_rows = null;
+    private $insert_id = null;
     
     public function __construct($host, $port, $user, $pass, $db)
     {
@@ -21,32 +19,16 @@ class Mysql
             'charset' => 'utf8', //指定字符集
             'timeout' => 2,
         );
-        $this->db = $db;
     }
     
     public function connect()
     {
-        $this->server = new \swoole_mysql();
-        $this->server->on('close', function ($db)
-        {
-            $this->remove($db);
-        });
-        $this->server->connect($this->config, function($db, $r){
-            if(false !== $r){
-                $this->link = $db;
-            }
-        });
-        return $this;
+        $this->client = new \DF\Async\MySqlPoolClient($this->config['host'], $this->config['port']);
     }
     
-    public function changeDb($dbName)
+    function changeDb($db)
     {
-        if($this->db == $dbName){
-            return true;
-        }
-        $this->link->query('use '.$dbName, function(\swoole_mysql $db, $r){
-            
-        });
+        return true;
     }
 
     /**
@@ -285,85 +267,60 @@ class Mysql
         $sql = "ALTER TABLE $table AUTO_INCREMENT=$id";
         return $this->query($sql);
     }
-    
+    //TODO
     public function escape($v)
     {
-        return mysqli_escape_string($this->link, $v);
+        return $v;
     }
     
+    public function execute($sql, $dbname = '')
+    {
+        $this->client->send('get', $dbname, $sql);
+        $response = $this->client->recv();
+        $this->insert_id = $response->insert_id();
+        $this->affected_rows = $response->affected_rows();
+        return $response;
+    }
+
     public function query($sql, $id = '', $overwrite = null, $value = '')
     {
         $t1 = microtime(true);
-        $ret = $this->link->query($sql);
+        $response = $this->execute($sql);
         $t2 = microtime(true);
-        //Base_Log::sql($this->host.':'.$this->port, $sql."\t".($t2 - $t1));
-        if($this->link->errno == 2006 //MySQL server has gone away
-        || $this->link->errno == 2013 //Lost connection to MySQL server during query
-        || $this->link->errno == 2048 //Invalid connection handle
-        || $this->link->errno == 2055)//Lost connection to MySQL server at '%s', system error: %d
+        if($response->errno() == 2006 //MySQL server has gone away
+        || $response->errno() == 2013 //Lost connection to MySQL server during query
+        || $response->errno() == 2048 //Invalid connection handle
+        || $response->errno() == 2055)//Lost connection to MySQL server at '%s', system error: %d
         {
-            $this->link = null;
             $this->connect();
-            $ret = $this->link->query($sql);
+            $response = $this->execute($sql);
         }
-        if(is_bool($ret)){
-            if(false === $ret){
-                throw new \Exception($this->link->error . "\nSQL:{$sql}\n", $this->link->errno);
-            }
-            return $ret;
+        if($response->errno()){
+            return array();//TO REMOVE
+            throw new \Exception($response->error() . "\nSQL:{$sql}\n", $response->errno());
         }
-        return $this->parseResult($ret, $id, $value, $overwrite);
+        return $this->parseResult($response, $id, $value, $overwrite);
     }
-    
+    /**
+     * 多条SQL查询
+     * @param type $sql
+     * @param type $id
+     * @param type $overwrite
+     * @param type $value
+     * @return type
+     */
     public function multiQuery($sql, $id = '', $overwrite = null, $value = '')
     {
-        if(is_array($sql)){
-            if(count($sql) == 1){
-                $sql = array_pop($sql);
-                return $this->query($sql, $id, $overwrite, $value);
-            }
-            $sql = implode(';', $sql);
-        }
-        $t1 = microtime(true);
-        $ret = $this->link->multi_query($sql);
-        $t2 = microtime(true);
-        //Base_Log::sql($this->host.':'.$this->port, $sql."\t".($t2 - $t1));
-        if($this->link->errno == 2006 //MySQL server has gone away
-        || $this->link->errno == 2013 //Lost connection to MySQL server during query
-        || $this->link->errno == 2048 //Invalid connection handle
-        || $this->link->errno == 2055)//Lost connection to MySQL server at '%s', system error: %d
-        {
-            $this->link = null;
-            $this->connect();
-            $ret = $this->link->multi_query($sql);
-        }
-        if(is_bool($ret)){
-            if(false === $ret){
-                throw new \Exception($this->link->error . "\nSQL:{$sql}\n", $this->link->errno);
-            }
-        }
-        $arr = array();
-        do {
-            $result = $this->link->store_result();
-            if ($result) {
-                $tmp = $this->parseResult($result, $id, $value, $overwrite);
-                if(isset($tmp[0])){
-                    $arr = array_merge($arr, $tmp);
-                }else{
-                    $arr += $tmp;
-                }
-            }
-            if(!$this->link->more_results()){
-                break;
-            }
-        } while ($this->link->next_result());
-        return $arr;
+        return $this->query($sql, $id, $overwrite, $value);
     }
     
-    private function parseResult($ret, $id, $value, $overwrite)
+    private function parseResult($response, $id, $value, $overwrite)
     {
         $result = array();
-        while($row = $ret->fetch_assoc()){
+        $ret = $response->response();
+        $fields = $response->fields();
+        foreach($ret as $row){
+            $row = array_combine($fields, $row);
             if(!empty($value)){
                 if(is_array($value)){
                     foreach($value as $v){
@@ -405,41 +362,16 @@ class Mysql
             }
             unset($tmp);
         }
-        $ret->free();
         return $result;
     }
 
     public function affectedRow()
     {
-        
-        return $this->link->affected_rows;
+        return $this->affected_rows;
     }
     
     public function insertId()
     {
-        return $this->link->insert_id;
-    }
-    
-    public function transaction($func)
-    {
-        $this->link->begin_transaction();
-        if($func($this)){
-            $this->link->commit();
-        }else{
-            $this->link->rollback();
-        }
-    }
-    
-    public function __destruct()
-    {
-        if(!empty($this->link)){
-            $this->link->close();
-            $this->link = null;
-        }
-        try {
-            //throw new Exception;
-        } catch (Exception $exc) {
-            
-        }
+        return $this->insert_id;
     }
 }

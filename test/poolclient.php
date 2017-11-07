@@ -29,5 +29,6 @@ class Client
 //    }
 //    fclose($fp);
 //}
-$client = new Client();
-$client->execute('set', 'test', 'select * from user');
+//$client = new Client();
+//$client->execute('set', 'test', 'select * from user');
+\DF\Async\MySqlPoolClient::testDF();

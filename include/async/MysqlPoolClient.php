@@ -41,6 +41,12 @@ class MySqlPoolClient
         $response = $client->recv();
         var_dump($response->result());
     }
+    
+    public static function testDF()
+    {
+        $info = \DF\Data\Goods::getData(['id' => 2]);
+        var_dump($info);
+    }
 }
 //$fp = fsockopen('127.0.0.1', 3307, $errno, $errstr, 30);
 //if (!$fp) {
@@ -55,4 +61,4 @@ class MySqlPoolClient
 //    fclose($fp);
 //}
 
-MySqlPoolClient::test();
+//MySqlPoolClient::testDF();

@@ -6,7 +6,7 @@ class MysqlResponse
     private $errno = 0;
     private $error = null;
     private $insert_id = 0;
-    private $affacted_rows = 0;
+    private $affected_rows = 0;
     private $count = 0;
     private $fields = array();
     private $result = array();
@@ -46,9 +46,19 @@ class MysqlResponse
         return $this->insert_id;
     }
     
-    public function affacted_rows()
+    public function affected_rows()
     {
-        return $this->affacted_rows;
+        return $this->affected_rows;
+    }
+    
+    public function fields()
+    {
+        return $this->fields;
+    }
+    
+    public function response()
+    {
+        return $this->result;
     }
     
     public function result()

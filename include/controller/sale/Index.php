@@ -33,6 +33,12 @@ class Index extends \DF\Base\Controller
         $this->output($info);
     }
     
+    public function userAction()
+    {
+        $info = \DF\Data\User::getData();
+        $this->output($info);
+    }
+    
     public function lpushAction()
     {
         $redis = \DF\Base\Redis::getInstance(\DF\Base\Key::REIDS_TEST);

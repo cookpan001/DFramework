@@ -7,8 +7,10 @@ class Server
     private $serv;
     private $pool;
     private $protocol;
+    private $transactions = array();
 
-    public function __construct() {
+    public function __construct()
+    {
         $this->serv = new swoole_server("0.0.0.0", 3307);
         $this->serv->set(array(
             'worker_num' => 8,
@@ -26,20 +28,12 @@ class Server
         ));
         $this->pool = new \DF\Async\MysqlPool(5);
         $this->protocol = new \DF\Protocol\Redis();
-        $this->serv->on('Start', array($this, 'onStart'));
-        $this->serv->on('Connect', array($this, 'onConnect'));
         $this->serv->on('Receive', array($this, 'onReceiveRedis'));
-        $this->serv->on('Close', array($this, 'onClose'));
         $this->serv->start();
     }
-    public function onStart( $serv ) {
-        
-    }
-    public function onConnect( $serv, $fd, $from_id ) {
-        
-       
-    }
-    public function onReceiveN( swoole_server $serv, $fd, $from_id, $data ) {
+    
+    public function onReceiveN( swoole_server $serv, $fd, $from_id, $data )
+    {
         $len = unpack('N', $data)[1];
         $sql = substr($data, -$len);
         $this->pool->query($sql, function($db, $result) use ($serv, $fd){
@@ -82,31 +76,44 @@ class Server
                 return;
             }
             $dbname = array_shift($commands);
-            $this->pool->query(implode(' ', $commands), function($db, $result) use ($serv, $fd){
-                $head = array(
-                    $db->error,
-                    $db->errno,
-                    $db->insert_id,
-                    $db->affected_rows,
-                    count($result),
-                );
-                $fields = array();
-                $data = array();
-                if(empty($db->errno) && $result){
-                    foreach($result as $line){
-                        if(empty($fields)){
-                            $fields = array_keys($line);
-                        }
-                        $data[] = array_values($line);
+            foreach($commands[0] as $sql) {
+                $this->pool->query($sql, $fd, function($db, $result) use ($serv, $fd){
+                    //出错了
+                    if(is_null($result)){
+                        $head = array(
+                            $db,//出错的时候，表示错误的字符串
+                            1,
+                            0,
+                            0,
+                            0,
+                        );
+                        $str = $this->protocol->serialize(array($head, [], []));
+                        $serv->send($fd, $str."\r\n");
+                        return;
                     }
-                }
-                $str = $this->protocol->serialize(array($head, $fields, $data));
-                $serv->send($fd, $str."\r\n");
-            });
+                    $head = array(
+                        $db->error,
+                        $db->errno,
+                        $db->insert_id,
+                        $db->affected_rows,
+                        count($result),
+                    );
+                    $fields = array();
+                    $data = array();
+                    if(empty($db->errno) && $result){
+                        foreach($result as $line){
+                            if(empty($fields)){
+                                $fields = array_keys($line);
+                            }
+                            $data[] = array_values($line);
+                        }
+                    }
+                    $str = $this->protocol->serialize(array($head, $fields, $data));
+                    $serv->send($fd, $str."\r\n");
+                    $this->pool->release($db);
+                });
+            }
         }
-    }
-    public function onClose( $serv, $fd, $from_id ) {
-        
     }
 }
 new Server();

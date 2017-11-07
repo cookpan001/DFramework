@@ -27,23 +27,25 @@
         "master": [
             {
                 "host": "localhost",
-                "port": 3306,
+                "port": 3307,
                 "user": "test",
                 "password": "test",
                 "database": "test",
                 "charset": "utf8",
-                "timeout": 2
+                "timeout": 2,
+                "swoole": true
             }
         ],
         "slave": [
             {
                 "host": "localhost",
-                "port": 3306,
+                "port": 3307,
                 "user": "test",
                 "password": "test",
                 "database": "test",
                 "charset": "utf8",
-                "timeout": 2
+                "timeout": 2,
+                "swoole": true
             }
         ]
     }

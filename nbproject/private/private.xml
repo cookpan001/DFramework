@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project-private xmlns="http://www.netbeans.org/ns/project-private/1">
+    <editor-bookmarks xmlns="http://www.netbeans.org/ns/editor-bookmarks/2" lastBookmarkId="0"/>
+    <open-files xmlns="http://www.netbeans.org/ns/projectui-open-files/2">
+        <group>
+            <file>file:/Users/pzhu/NetBeansProjects/Davdian/include/base/SwooleMysql.php</file>
+            <file>file:/Users/pzhu/NetBeansProjects/Davdian/config/redis.json</file>
+            <file>file:/Users/pzhu/NetBeansProjects/Davdian/include/base/Config.php</file>
+            <file>file:/Users/pzhu/NetBeansProjects/Davdian/include/base/Redis.php</file>
+            <file>file:/Users/pzhu/NetBeansProjects/Davdian/include/controller/sale/Index.php</file>
+            <file>file:/Users/pzhu/NetBeansProjects/Davdian/include/http/HttpInput.php</file>
+            <file>file:/Users/pzhu/NetBeansProjects/Davdian/include/async/SwooleMysqlPool.php</file>
+            <file>file:/Users/pzhu/NetBeansProjects/Davdian/include/http/HttpClient.php</file>
+            <file>file:/Users/pzhu/NetBeansProjects/Davdian/mysqlpool.php</file>
+            <file>file:/Users/pzhu/NetBeansProjects/Davdian/include/base/Key.php</file>
+            <file>file:/Users/pzhu/NetBeansProjects/Davdian/base.php</file>
+            <file>file:/Users/pzhu/NetBeansProjects/Davdian/httpserver.php</file>
+            <file>file:/Users/pzhu/NetBeansProjects/Davdian/include/object/Storage.php</file>
+            <file>file:/Users/pzhu/NetBeansProjects/Davdian/config/db.json</file>
+            <file>file:/Users/pzhu/NetBeansProjects/Davdian/include/base/Database.php</file>
+        </group>
+    </open-files>
+</project-private>

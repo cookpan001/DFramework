@@ -1,0 +1,19 @@
+{
+    "user": {
+        "database": {
+            "test": 1
+        },
+        "num": 1,
+        "primary": "id",
+        "type": "mod"
+    },
+    "goods": {
+        "database": {
+            "test": 2
+        },
+        "num": 2,
+        "primary": "id",
+        "type": "mod",
+        "step": 1
+    }
+}

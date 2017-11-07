@@ -26,6 +26,28 @@ DFramework
         "step": 1
     }
 }
+1.2 Nginx Vhost配置
+
+server {
+    listen       80;
+
+    server_name  swoole;
+
+    charset utf-8;
+
+    access_log /tmp/swoole.access.log;
+    error_log  /tmp/swoole.error.log;
+    rewrite_log on;
+    root <rootpath>;
+
+    location / {
+        proxy_http_version 1.1;
+        proxy_set_header Connection "keep-alive";
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_pass http://127.0.0.1:9501;
+    }
+}
+
 2. 启动httpserver
 php <rootpath>/server/httpserver.php
 3. 启动连接池

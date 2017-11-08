@@ -13,7 +13,9 @@ class MysqlPool
     protected $connections = array();
     protected $transactions = array();//有哪些数据库连接在事务中
     protected $fd2db = array();//客户端连接对数据库连接的映射，考虑用在事务
-    
+    protected $waiting = array();//等待数据库连接的客户端
+
+
     public function __construct($max = 5)
     {
         $this->config = Config::getConfig(Config::CONFIG_DB);

@@ -113,7 +113,6 @@ class Server
                             $data[] = array_values($line);
                         }
                     }
-                    var_dump($result);
                     $str = $this->protocol->serialize(array($head, $fields, $data));
                     $serv->send($fd, $str."\r\n");
                     $this->pool->release($db);

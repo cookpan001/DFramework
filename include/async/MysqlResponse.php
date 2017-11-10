@@ -51,6 +51,11 @@ class MysqlResponse
         return $this->affected_rows;
     }
     
+    public function count()
+    {
+        return $this->count;
+    }
+    
     public function fields()
     {
         return $this->fields;

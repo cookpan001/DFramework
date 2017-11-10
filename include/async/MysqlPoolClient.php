@@ -31,7 +31,6 @@ class MySqlPoolClient
     {
         $str = $this->client->recv();
         $ret = $this->protocol->unserialize(trim($str));
-        var_dump($ret);
         return new MysqlResponse($ret[0]);
     }
     

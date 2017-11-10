@@ -317,6 +317,9 @@ class SwooleMysql
     private function parseResult($response, $id, $value, $overwrite)
     {
         $result = array();
+        if(0 == $response->count()){
+            return $result;
+        }
         $ret = $response->response();
         $fields = $response->fields();
         foreach($ret as $row){

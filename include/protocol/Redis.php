@@ -48,13 +48,18 @@ class Redis
         }
         return $str;
     }
-    public function parse(&$response, &$cur = 0)
+    
+    public function parse(&$response, $totalLen, &$cur = 0)
     {
         $pos = strpos($response, self::END, $cur);
         if(false === $pos){
-            $ret = preg_split('#\s+#', $response);
-            $cur = strlen($response);
-            return $ret;
+            if(0 === $cur){
+                $ret = preg_split('#[ \t]#', $response);
+                $cur = $totalLen;
+                return $ret;
+            }else{
+                $pos = $totalLen;
+            }
         }
         $ret = null;
         switch ($response[$cur]) {
@@ -94,7 +99,7 @@ class Redis
                 for ($c = 0; $c < $length; $c ++) {
                     //$cur += 1;
                     //echo substr($response, $cur);
-                    $ret[] = $this->parse($response, $cur);
+                    $ret[] = $this->parse($response, $totalLen, $cur);
                 }
                 break;
             default :
@@ -112,10 +117,19 @@ class Redis
             return $ret;
         }
         $cur = 0;
-        while($cur < strlen($str)){
-            $ret[] = $this->parse($str, $cur);
+        $len = strlen($str);
+        $tmp = 0;
+        while($cur < $len){
+            $ret[] = $this->parse($str, $len, $cur);
+            if($tmp > 5){
+                break;
+            }
+            $tmp = $cur;
         }
         return $ret;
     }
 }
-
+//$redis = new Redis;
+//$str = "*3\r\n*5\r\n$-1\r\n:0\r\n:0\r\n:0\r\n:0\r\n*0\r\n*0";
+//$ret = $redis->unserialize($str);
+//var_dump($ret);

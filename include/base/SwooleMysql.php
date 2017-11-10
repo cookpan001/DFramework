@@ -23,7 +23,7 @@ class SwooleMysql
     
     public function connect()
     {
-        $this->client = new \DF\Async\MySqlPoolClient($this->config['host'], $this->config['port']);
+        $this->client = new \DF\Async\MySqlPoolSocket($this->config['host'], $this->config['port']);
     }
     
     function changeDb($db)
@@ -275,8 +275,7 @@ class SwooleMysql
     
     public function execute($sql, $dbname = '')
     {
-        $this->client->send('get', $dbname, $sql);
-        $response = $this->client->recv();
+        $response = $this->client->request('get', $dbname, $sql);
         $this->insert_id = $response->insert_id();
         $this->affected_rows = $response->affected_rows();
         return $response;

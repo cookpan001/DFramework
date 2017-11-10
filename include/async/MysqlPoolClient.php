@@ -3,10 +3,21 @@ namespace DF\Async;
 
 class MySqlPoolClient
 {
+
+    private $port;
+    private $host;
     private $client;
     private $protocol;
     
     public function __construct($host, $port)
+    {
+        $this->protocol = new \DF\Protocol\Redis();
+        $this->host = $host;
+        $this->port = $port;
+        $this->connect();
+    }
+    
+    public function connect()
     {
         $this->client = new \swoole_client(SWOOLE_TCP | SWOOLE_KEEP);
         $this->client->set(array(
@@ -18,17 +29,16 @@ class MySqlPoolClient
             'open_eof_check' => true, //打开EOF检测
             'package_eof' => "\r\n\r\n", //设置EOF
         ));
-        $this->client->connect($host, $port);
-        $this->protocol = new \DF\Protocol\Redis();
+        $this->client->connect($this->host, $this->port);
     }
     
-    public function send($cmd, $dbname, $sql)
+    public function request($cmd, $dbname, $sql)
     {
-        $this->client->send($this->protocol->serialize([$cmd, $dbname, $sql]));
-    }
-    
-    public function recv()
-    {
+        $ret0 = $this->client->send($this->protocol->serialize([$cmd, $dbname, $sql]));
+        if(!$ret0){
+            $this->connect();
+            $ret0 = $this->client->send($this->protocol->serialize([$cmd, $dbname, $sql]));
+        }
         $str = $this->client->recv();
         $ret = $this->protocol->unserialize(trim($str));
         return new MysqlResponse($ret[0]);

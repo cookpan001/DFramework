@@ -76,7 +76,12 @@ class Server
                 return;
             }
             $dbname = array_shift($commands);
-            foreach($commands[0] as $sql) {
+            if(is_array($commands[0])){
+                $arr = $commands[0];
+            }else{
+                $arr = $commands;
+            }
+            foreach($arr as $sql) {
                 $this->pool->query($sql, $fd, function($db, $result) use ($serv, $fd){
                     //出错了
                     if(is_null($result)){
@@ -108,6 +113,7 @@ class Server
                             $data[] = array_values($line);
                         }
                     }
+                    var_dump($result);
                     $str = $this->protocol->serialize(array($head, $fields, $data));
                     $serv->send($fd, $str."\r\n");
                     $this->pool->release($db);

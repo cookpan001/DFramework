@@ -35,7 +35,14 @@ class MysqlPool
     {
         $this->close();
     }
-    
+    /**
+     * 创建一条连接
+     * @param type $dbname
+     * @param type $master
+     * @param type $sql
+     * @param type $callback
+     * @return type
+     */
     public function create($dbname, $master = 'master', $sql = '', $callback = null)
     {
         if(!isset($this->config[$dbname][$master])){
@@ -50,6 +57,7 @@ class MysqlPool
         }
         if(count($this->idle[$dbname][$master]) + count($this->busy[$dbname][$master]) >= $this->max[$master]){
             call_user_func_array($callback, array('max connection for database: '.$dbname, null));
+            $this->waiting[$dbname][$master][] = array($sql, $callback);
             return null;
         }
         $conn = new \swoole_mysql();
@@ -80,7 +88,11 @@ class MysqlPool
             unset($this->transactions[spl_object_hash($db)]);
         }
     }
-
+    /**
+     * 把连接放回到池中，如果有排队的SQL则直接执行
+     * @param type $conn
+     * @return boolean
+     */
     public function release($conn)
     {
         $hash = spl_object_hash($conn);
@@ -89,12 +101,20 @@ class MysqlPool
         }
         if(isset($this->connections[$hash])){
             list($dbname, $master) = $this->connections[$hash];
-            $this->idle[$dbname][$master][$hash] = $conn;
-            unset($this->busy[$dbname][$master][$hash]);
+            if(empty($this->waiting[$dbname][$master])){//没有排队的SQL查询
+                $this->idle[$dbname][$master][$hash] = $conn;
+                unset($this->busy[$dbname][$master][$hash]);
+            }else{
+                list($sql, $callback) = array_shift($this->waiting[$dbname][$master]);
+                $this->execute($conn, $sql, $callback);
+            }
         }
         return true;
     }
-    
+    /**
+     * 删除一条数据库连接
+     * @param type $conn
+     */
     public function remove($conn)
     {
         $hash = spl_object_hash($conn);
@@ -115,7 +135,11 @@ class MysqlPool
         unset($this->idle[$dbname][$master][$oldhash]);
         unset($this->connections[$oldhash]);
     }
-    
+    /**
+     * 解析出SQL所在的表名和数据库名
+     * @param type $sql
+     * @return string
+     */
     public function getDb($sql)
     {
         $matches = array();
@@ -146,7 +170,7 @@ class MysqlPool
         return '';
     }
     /**
-     * 
+     * 执行SQL, 对SERVER的接口
      * @param type $sql0
      * @param $callback
      * @return type

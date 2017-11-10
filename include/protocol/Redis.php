@@ -118,13 +118,8 @@ class Redis
         }
         $cur = 0;
         $len = strlen($str);
-        $tmp = 0;
         while($cur < $len){
             $ret[] = $this->parse($str, $len, $cur);
-            if($tmp > 5){
-                break;
-            }
-            $tmp = $cur;
         }
         return $ret;
     }

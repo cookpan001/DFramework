@@ -1,6 +1,6 @@
 DFramework
 
-兼容swoole与非swoole的PHP轻型框架, 支持分库与分表逻辑，同时实现了简易的MySQL连接池中间件.
+兼容swoole与非swoole的PHP轻型框架, 支持分库与分表逻辑, 以及读写分离，同时实现了简易的MySQL连接池中间件.
 
 测试:
 1. 本地安装ＭySQL
@@ -54,6 +54,8 @@ php <rootpath>/server/httpserver.php
 php <rootpath>/server/mysqlpool.php
 
 4. 测试地址
-
+4.1 
 连接池地址: http://127.0.0.1:9501/sale/api/Index/goods
+根据上述配置，需要建两张表goods_00和goods_01
+4.2
 非连接池: http://127.0.0.1:9501/sale/api/Index/user

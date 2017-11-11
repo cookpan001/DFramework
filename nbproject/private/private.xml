@@ -3,21 +3,17 @@
     <editor-bookmarks xmlns="http://www.netbeans.org/ns/editor-bookmarks/2" lastBookmarkId="0"/>
     <open-files xmlns="http://www.netbeans.org/ns/projectui-open-files/2">
         <group>
-            <file>file:/Users/pzhu/NetBeansProjects/Davdian/include/base/SwooleMysql.php</file>
-            <file>file:/Users/pzhu/NetBeansProjects/Davdian/config/redis.json</file>
-            <file>file:/Users/pzhu/NetBeansProjects/Davdian/include/base/Config.php</file>
-            <file>file:/Users/pzhu/NetBeansProjects/Davdian/include/base/Redis.php</file>
-            <file>file:/Users/pzhu/NetBeansProjects/Davdian/include/controller/sale/Index.php</file>
-            <file>file:/Users/pzhu/NetBeansProjects/Davdian/include/http/HttpInput.php</file>
-            <file>file:/Users/pzhu/NetBeansProjects/Davdian/include/async/SwooleMysqlPool.php</file>
-            <file>file:/Users/pzhu/NetBeansProjects/Davdian/include/http/HttpClient.php</file>
-            <file>file:/Users/pzhu/NetBeansProjects/Davdian/mysqlpool.php</file>
-            <file>file:/Users/pzhu/NetBeansProjects/Davdian/include/base/Key.php</file>
-            <file>file:/Users/pzhu/NetBeansProjects/Davdian/base.php</file>
-            <file>file:/Users/pzhu/NetBeansProjects/Davdian/httpserver.php</file>
-            <file>file:/Users/pzhu/NetBeansProjects/Davdian/include/object/Storage.php</file>
-            <file>file:/Users/pzhu/NetBeansProjects/Davdian/config/db.json</file>
-            <file>file:/Users/pzhu/NetBeansProjects/Davdian/include/base/Database.php</file>
+            <file>file:/Users/bubu/repos/DFramework/include/async/MysqlResponse.php</file>
+            <file>file:/Users/bubu/repos/DFramework/README</file>
+            <file>file:/Users/bubu/repos/DFramework/include/async/MysqlPool.php</file>
+            <file>file:/Users/bubu/repos/DFramework/include/base/SwooleMysql.php</file>
+            <file>file:/Users/bubu/repos/DFramework/include/async/MySqlPoolLink.php</file>
+            <file>file:/Users/bubu/repos/DFramework/base.php</file>
+            <file>file:/Users/bubu/repos/DFramework/include/async/MysqlPoolClient.php</file>
+            <file>file:/Users/bubu/repos/DFramework/server/httpserver.php</file>
+            <file>file:/Users/bubu/repos/DFramework/include/protocol/Redis.php</file>
+            <file>file:/Users/bubu/repos/DFramework/include/async/MySqlPoolSocket.php</file>
+            <file>file:/Users/bubu/repos/DFramework/server/mysqlpool.php</file>
         </group>
     </open-files>
 </project-private>

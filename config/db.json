@@ -23,7 +23,7 @@
             }
         ]
     },
-    "admin": {
+    "pool": {
         "master": [
             {
                 "host": "localhost",
@@ -33,7 +33,7 @@
                 "database": "test",
                 "charset": "utf8",
                 "timeout": 2,
-                "swoole": true
+                "pool": true
             }
         ],
         "slave": [
@@ -45,7 +45,7 @@
                 "database": "test",
                 "charset": "utf8",
                 "timeout": 2,
-                "swoole": true
+                "pool": true
             }
         ]
     }

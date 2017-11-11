@@ -26,7 +26,7 @@ class Server
             'package_eof' => "\r\n", //设置EOF
             'log_file' => '/tmp/mysqlpool.log',
         ));
-        $this->pool = new \DF\Async\MysqlPool(10);
+        $this->pool = new \DF\Async\MysqlPool(50);
         $this->protocol = new \DF\Protocol\Redis();
         $this->serv->on('Receive', array($this, 'onReceiveRedis'));
         $this->serv->start();

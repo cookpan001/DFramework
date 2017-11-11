@@ -4,12 +4,12 @@ namespace DF\Async;
 class MySqlPoolSocket
 {
     const SIZE = 1024;
-    const TIMEOUT = 5;
+    const TIMEOUT = 50;
     const RETRY = 3;
     
     private $port;
     private $host;
-    private $socket;
+    private $socket = null;
     private $protocol;
     
     public function __construct($host, $port)
@@ -22,6 +22,10 @@ class MySqlPoolSocket
     
     public function connect()
     {
+        if($this->socket){
+            socket_close($this->socket);
+            $this->socket = null;
+        }
         $errno = 0;
         $errstr = '';
         $timeout = 2;
@@ -37,71 +41,81 @@ class MySqlPoolSocket
         }
     }
     
-    public function write($str)
+    private function send($str, $retry = 0)
     {
-        $ret = fwrite($this->socket, $str);
-        if(!$ret){
-            $this->connect();
-            $ret = fwrite($this->socket, $str);
+        if($retry > self::RETRY){
+            return false;
         }
-        return $ret;
+        $n = socket_write($this->socket, $str, strlen($str));
+        $errorCode = socket_last_error($this->socket);
+        socket_clear_error($this->socket);
+        if($n == 0 || (EPIPE == $errorCode || ECONNRESET == $errorCode)){
+            $this->connect();
+            $ret = $this->send($str, $retry + 1);
+            return $ret;
+        }
+        return true;
     }
     
-    public function read()
+    private function receive($retry = 0)
     {
-        $str = $this->client->recv();
-        $ret = $this->protocol->unserialize(trim($str));
-        return new MysqlResponse($ret[0]);
+        $tmp = '';
+        $num = socket_recv($this->socket, $tmp, self::SIZE, MSG_DONTWAIT);
+        $errorCode = socket_last_error($this->socket);
+        socket_clear_error($this->socket);
+        if((0 === $errorCode && null === $tmp) || EPIPE == $errorCode || ECONNRESET == $errorCode){
+            $this->connect();
+            return $this->request($retry + 1);
+        }
+        return $tmp;
     }
-    
+
     public function request($cmd, $dbname, $sql, $retry = 0)
     {
         if($retry > self::RETRY){
-            return null;
+            return new MysqlResponse();
         }
         $str = $this->protocol->serialize([$cmd, $dbname, $sql]);
-        socket_write($this->socket, $str, strlen($str));
+        $sendRet = $this->send($str);
+        if(!$sendRet){
+            return new MysqlResponse();
+        }
+        $tmp = '';
+        $ret = '';
+        //read
+        $num = socket_recv($this->socket, $tmp, self::SIZE, MSG_DONTWAIT);
         $errorCode = socket_last_error($this->socket);
         socket_clear_error($this->socket);
-        if((EPIPE == $errorCode || ECONNRESET == $errorCode)){
-            socket_close($this->socket);
-            $this->socket = null;
+        if((0 === $errorCode && null === $tmp) || EPIPE == $errorCode || ECONNRESET == $errorCode){
             $this->connect();
             return $this->request($cmd, $dbname, $sql, $retry + 1);
         }
-        //read
-        
-        $tmp = '';
-        $ret = '';
-        $i = 0;
+        if(is_int($num) && $num > 0){
+            $ret .= $tmp;
+        }
         $timout = self::TIMEOUT;
         while(true){
             if($timout <= 0){
                 if(!empty($ret)){
                     break;
                 }
-                return false;
+                return new MysqlResponse();
             }
-            ++$i;
             $num = socket_recv($this->socket, $tmp, self::SIZE, MSG_DONTWAIT);
+            $errorCode = socket_last_error($this->socket);
             if(is_int($num) && $num > 0){
                 $ret .= $tmp;
             }
-            $errorCode = socket_last_error($this->socket);
-            socket_clear_error($this->socket);
             if((0 === $errorCode && null === $tmp) || EPIPE == $errorCode || ECONNRESET == $errorCode){
-                socket_close($this->socket);
-                $this->socket = null;
                 $this->connect();
-                //不能重新发请求，直接返回false
-                return false;
+                return $this->request($cmd, $dbname, $sql, $retry + 1);
             }
             if (EAGAIN == $errorCode || EINPROGRESS == $errorCode) {
                 if(!empty($ret)){
                     break;
                 }
                 $timout--;
-                usleep(500);
+                usleep(100);
                 continue;
             }
             if(0 === $num){
@@ -114,10 +128,11 @@ class MySqlPoolSocket
     
     public static function test()
     {
-        $client = new self('127.0.0.1', 3307);
-        $response = $client->request('get', 'test', 'select * from user');
-        //var_dump($response);
-        var_dump($response->result());
+//        $client = new self('127.0.0.1', 3307);
+//        $response = $client->request('get', 'test', 'select * from user');
+//        var_dump($response->result());
+        $info = \DF\Data\User::getData();
+        var_dump($info);
     }
     
     public static function testDF()
@@ -126,5 +141,5 @@ class MySqlPoolSocket
         var_dump($info);
     }
 }
-include dirname(dirname(__DIR__)) . DIRECTORY_SEPARATOR . 'base.php';
-MySqlPoolSocket::testDF();
+//include dirname(dirname(__DIR__)) . DIRECTORY_SEPARATOR . 'base.php';
+//MySqlPoolSocket::test();

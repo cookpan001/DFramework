@@ -123,6 +123,76 @@ class Redis
         }
         return $ret;
     }
+    
+    private function read($conn)
+    {
+        if(!$conn)
+        {
+            return false;
+        }
+        $s = fgets($conn);
+        return trim($s);
+    }
+
+    public function response($conn)
+    {
+        // Read the response
+        $s = $this->read($conn);
+        if(false === $s)
+        {
+            return false;
+        }
+        switch ($s[0])
+        {
+            case '-' : // Error message
+                return substr($s, 1);
+            case '+' : // Single line response
+                return substr($s, 1);
+            case ':' : //Integer number
+                return (int)substr($s, 1);
+            case '$' : //Bulk data response
+                $i = (int)(substr($s, 1));
+                if ($i == - 1)
+                {
+                    return null;
+                }
+                $buffer = '';
+                if ($i == 0)
+                {
+                    $s = $this->read($conn);
+                }
+                while ($i > 0)
+                {
+                    $s = $this->read($conn);
+                    $l = strlen($s);
+                    $i -= $l;
+                    if ($i < 0)
+                    {
+                        $s = substr($s, 0, $i);
+                    }
+                    $buffer .= $s;
+                }
+                return $buffer;
+            case '*' : // Multi-bulk data (a list of values)
+                $i = (int) (substr($s, 1));
+                if ($i == - 1)
+                {
+                    return array();
+                }
+                if ($i == 0)
+                {
+                    return array();
+                }
+                $res = array();
+                for ($c = 0; $c < $i; ++$c)
+                {
+                    $res[] = $this->response();
+                }
+                return $res;
+            default :
+                return false;
+        }
+    }
 }
 //$redis = new Redis;
 //$str = "*3\r\n*5\r\n$-1\r\n:0\r\n:0\r\n:0\r\n:0\r\n*0\r\n*0";

@@ -55,7 +55,7 @@ class Database
             $conf = self::getConf($master, $dbName);
             self::$connMap[$dbName][$master] = $conf;
         }
-        if(isset($conf['swoole']) && $conf['swoole']){
+        if(isset($conf['pool']) && $conf['pool']){
             $db = new SwooleMysql($conf['host'], $conf['port'], $conf['user'], $conf['password'], $conf['database']);
         }else{
             $db = new Mysql($conf['host'], $conf['port'], $conf['user'], $conf['password'], $conf['database']);

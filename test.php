@@ -84,4 +84,13 @@ LUA;
     $ret = $redis->eval($script, array($key, $count)/*keys和argv,先写key*/, 1/*前一个数组中key的数量*/);
     var_dump($ret);
 }
-lrange();
+function gen() {
+    yield 'foo';
+    yield 'bar';
+    yield 'bar2';
+}
+ 
+$gen = gen();
+var_dump($gen->send('something'));
+var_dump($gen->send('something'));
+var_dump($gen->send('something'));

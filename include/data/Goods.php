@@ -5,6 +5,6 @@ use DF\Base\Database;
 
 class Goods extends Database
 {
-    const DB_NAME = 'admin';
+    const DB_NAME = 'pool';
     const TABLE_NAME = 'goods';
 }

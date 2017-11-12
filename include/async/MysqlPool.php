@@ -175,7 +175,7 @@ class MysqlPool
      * @param $callback
      * @return type
      */
-    public function query($sql0, $fd, $callback)
+    public function query($sql0, $fd, $dbname, $callback)
     {
         $sql = trim($sql0);
         $prefix = strtolower(substr($sql, 0, 7));
@@ -184,7 +184,9 @@ class MysqlPool
         }else{
             $master = 'master';
         }
-        $dbname = $this->getDb(trim($sql));
+        if(empty($dbname)){
+            $dbname = $this->getDb($sql);
+        }
         if(isset($this->idle[$dbname][$master])){
             foreach($this->idle[$dbname][$master] as $hash => $conn){
                 unset($this->idle[$dbname][$master][$hash]);

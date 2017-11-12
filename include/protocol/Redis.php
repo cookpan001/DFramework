@@ -196,5 +196,6 @@ class Redis
 }
 //$redis = new Redis;
 //$str = "*3\r\n*5\r\n$-1\r\n:0\r\n:0\r\n:0\r\n:0\r\n*0\r\n*0";
-//$ret = $redis->unserialize($str);
-//var_dump($ret);
+//for($i=0;$i<20000;++$i){
+//    $ret = $redis->unserialize($str);
+//}

@@ -29,3 +29,8 @@ class Msgpack
         return $this->serialize($data);
     }
 }
+//$app = new Msgpack();
+//$str = $app->serialize(array(array(null, 0, 0, 0, 0), array(), array()));
+//for($i=0;$i<20000;++$i){
+//    $ret = $app->unserialize($str);
+//}

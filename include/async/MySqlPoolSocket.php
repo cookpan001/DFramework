@@ -14,7 +14,7 @@ class MySqlPoolSocket
     
     public function __construct($host, $port)
     {
-        $this->protocol = new \DF\Protocol\Redis();
+        $this->protocol = new \DF\Protocol\Msgpack();
         $this->host = $host;
         $this->port = $port;
         $this->connect();
@@ -122,7 +122,7 @@ class MySqlPoolSocket
                 break;
             }
         }
-        $response = $this->protocol->unserialize(trim($ret));
+        $response = $this->protocol->unserialize($ret);
         return new MysqlResponse($response[0]);
     }
     

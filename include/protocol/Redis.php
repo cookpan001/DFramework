@@ -62,6 +62,9 @@ class Redis
             }
         }
         $ret = null;
+        if(!isset($response[$cur])){
+            return $ret;
+        }
         switch ($response[$cur]) {
             case '-' : // Error message
                 $ret = substr($response, $cur + 1, $pos - $cur - 1);

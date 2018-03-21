@@ -286,6 +286,7 @@ class SwooleMysql
         $t1 = microtime(true);
         $response = $this->execute($sql);
         $t2 = microtime(true);
+        \DF\Base\Log::sql($this->config['host'].':'.$this->config['port'], $this->config['database'], $sql, $response->error(), $response->errno(), ($t2 - $t1) * 1000);
         if($response->errno() == 2006 //MySQL server has gone away
         || $response->errno() == 2013 //Lost connection to MySQL server during query
         || $response->errno() == 2048 //Invalid connection handle

@@ -1,8 +1,21 @@
-DFramework
-
 兼容swoole与非swoole的PHP轻型框架, 支持分库与分表逻辑, 以及读写分离，同时实现了简易的MySQL连接池中间件.
 
-测试:
+需要安装以下几种PHP扩展
+
+(1)swoole   中间件服务需要
+(2)msgpack  比json要小的编码和解码格式
+(3)redis    访问redis, predis还未集成
+
+服务列表
+(1)HTTP SERVER
+(2)MYSQL中间件
+(3)定时任务
+(4)队列服务
+(5)SSO (TODO)
+(6)UUID (TODO)
+(7)配置中心 (TODO)
+
+中间件测试:
 1. 本地安装ＭySQL
 1.1 配置
     <rootpath>/config/db.json

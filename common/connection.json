@@ -1,0 +1,127 @@
+{
+    "db": {
+        "local_main": {
+            "host": "localhost",
+            "port": 3306,
+            "user": "cpxdev",
+            "password": "jwsoho3102",
+            "database": "brant_dev",
+            "charset": "utf8",
+            "timeout": 2
+        },
+        "dev_aliyun": {
+            "host": "rm-2zev1q881grn3xu4hto.mysql.rds.aliyuncs.com",
+            "port": 3306,
+            "user": "cpxdev",
+            "password": "jwsoho3102",
+            "database": "cpx",
+            "charset": "utf8",
+            "timeout": 2
+        },
+        "test_main" : {
+            "host": "rm-2zev1q881grn3xu4h.mysql.rds.aliyuncs.com",
+            "port": 3306,
+            "user": "cpxdev",
+            "password": "jwsoho3102",
+            "database": "cpx",
+            "charset": "utf8",
+            "timeout": 2
+        },
+        "app_main": {
+            "host": "rm-2zev1q881grn3xu4h.mysql.rds.aliyuncs.com",
+            "port": 3306,
+            "user": "cpxdev",
+            "password": "jwsoho3102",
+            "database": "cpx",
+            "charset": "utf8",
+            "timeout": 2
+        },
+        "online_main": {
+            "host": "rm-2zec02eh8ea2hl6s7.mysql.rds.aliyuncs.com",
+            "port": 3306,
+            "user": "cpx",
+            "password": "qH8tsdcmtYTzXr5R",
+            "database": "cpx_prod",
+            "charset": "utf8",
+            "timeout": 2
+        },
+        "online_slave": {
+            "host": "rr-2ze7w2v0ez220iv1l.mysql.rds.aliyuncs.com",
+            "port": 3306,
+            "user": "cpx",
+            "password": "qH8tsdcmtYTzXr5R",
+            "database": "cpx_prod",
+            "charset": "utf8",
+            "timeout": 2
+        },
+        "local_pool": {
+            "host": "localhost",
+            "port": 3307,
+            "user": "test",
+            "password": "test",
+            "database": "test",
+            "charset": "utf8",
+            "timeout": 2,
+            "pool": true
+        }
+    },
+    "redis": {
+        "local_main" : {
+            "host": "127.0.0.1",
+            "port": 6379,
+            "password": "ccapchex",
+            "timeout": 1
+        },
+        "app_main" : {
+            "host": "10.170.192.121",
+            "port": 6379,
+            "password": "ccapchex",
+            "timeout": 1
+        },
+        "test_main" : {
+            "host": "127.0.0.1",
+            "port": 6379,
+            "password": "ccapchex",
+            "timeout": 1
+        },
+        "stage_main" : {
+            "host": "1eb2d53c32004a42.m.cnbja.kvstore.aliyuncs.com",
+            "port": 6379,
+            "password": "1eb2d53c32004a42:03CPX16cache",
+            "timeout": 1,
+            "prefix": "kf_stg_"
+        },
+        "online_main" : {
+            "host": "1eb2d53c32004a42.m.cnbja.kvstore.aliyuncs.com",
+            "port": 6379,
+            "password": "1eb2d53c32004a42:03CPX16cache",
+            "timeout": 1
+        }
+    },
+    "queue": {
+        "local": [
+            {"type": "redis", "host": "127.0.0.1", "port": 6379, "password": "ccapchex"}
+        ],
+        "app": [
+            {"type": "redis", "host": "10.170.192.121", "port": 6379, "password": "ccapchex"},
+            {"type": "redis", "host": "10.170.192.121", "port": 6400, "password": "ccapchex"}
+        ],
+        "test": [
+            {"type": "redis", "host": "10.170.192.121", "port": 6379, "password": "ccapchex"},
+            {"type": "redis", "host": "10.170.192.121", "port": 6400, "password": "ccapchex"}
+        ],
+        "online": [
+            {"type": "redis", "host": "1eb2d53c32004a42.m.cnbja.kvstore.aliyuncs.com", "port": 6379, "password": "1eb2d53c32004a42:03CPX16cache"}
+        ],
+        "prefix": "cpx_",
+        "handler": {
+            "sendReportData": "PushTable",
+            "UpdateTable": "UpdateTable"
+        }
+    },
+    "search": {
+        "local" : [
+            "http://127.0.0.1:9200/"
+        ]
+    }
+}

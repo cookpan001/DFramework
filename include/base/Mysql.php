@@ -31,7 +31,7 @@ class Mysql
             usleep(1000);
         }
         if($this->link->connect_errno){
-            Base_Log::sql($this->host.':'.$this->port, $this->link->connect_error);
+            Log::sql($this->host.':'.$this->port, $this->link->connect_error);
             return null;
         }
         $this->link->set_charset("utf8mb4");
@@ -124,6 +124,22 @@ class Mysql
             return $sql;
         }
         return $this->query($sql, $id, $overwrite, $value);
+    }
+    
+    public function union($table, $where = array(), $option = array(), $fields = array())
+    {
+        $sqls = array();
+        $option['multi'] = true;
+        foreach($where as $w){
+            $sqls[] = '('.$this->select($table, $w, $option, $fields).')';
+        }
+        if(empty($sqls)){
+            return array();
+        }
+        $id = isset($option['id']) ? $option['id'] : '';
+        $overwrite = isset($option['overwrite']) ? $option['overwrite'] : null;
+        $value = isset($option['value']) ? $option['value']: '';
+        return $this->query(implode(' UNION ', $sqls), $id, $overwrite, $value);
     }
     
     private function quote($fields)
@@ -221,7 +237,14 @@ class Mysql
         }
         return $this->query($sql);
     }
-    
+    /**
+     * 
+     * @param string $table 表名
+     * @param array $vals   要更改的值[k => v]
+     * @param array $where  条件[k => v]
+     * @param array $rawKey 数组，在这个数组里的键，不需要escape
+     * @return mixed
+     */
     public function update($table, $vals = array(), $where = array(), $rawKey = array())
     {
         if(empty($vals)){
@@ -298,7 +321,13 @@ class Mysql
         $t1 = microtime(true);
         $ret = $this->link->query($sql);
         $t2 = microtime(true);
-        //Base_Log::sql($this->host.':'.$this->port, $sql."\t".($t2 - $t1));
+        if(defined('LOG_ON_ERROR') && LOG_ON_ERROR){
+            if($this->link->errno){
+                \DF\Base\Log::sql($this->host.':'.$this->port, $this->db, $sql, $this->link->error, $this->link->errno, ($t2 - $t1) * 1000);
+            }
+        }else{
+            \DF\Base\Log::sql($this->host.':'.$this->port, $this->db, $sql, $this->link->error, $this->link->errno, ($t2 - $t1) * 1000);
+        }
         if($this->link->errno == 2006 //MySQL server has gone away
         || $this->link->errno == 2013 //Lost connection to MySQL server during query
         || $this->link->errno == 2048 //Invalid connection handle
@@ -329,7 +358,13 @@ class Mysql
         $t1 = microtime(true);
         $ret = $this->link->multi_query($sql);
         $t2 = microtime(true);
-        //Base_Log::sql($this->host.':'.$this->port, $sql."\t".($t2 - $t1));
+        if(defined('LOG_ON_ERROR') && LOG_ON_ERROR){
+            if($this->link->errno){
+                \DF\Base\Log::sql($this->host.':'.$this->port, $this->db, $sql, $this->link->error, $this->link->errno, ($t2 - $t1) * 1000);
+            }
+        }else{
+            \DF\Base\Log::sql($this->host.':'.$this->port, $this->db, $sql, $this->link->error, $this->link->errno, ($t2 - $t1) * 1000);
+        }
         if($this->link->errno == 2006 //MySQL server has gone away
         || $this->link->errno == 2013 //Lost connection to MySQL server during query
         || $this->link->errno == 2048 //Invalid connection handle

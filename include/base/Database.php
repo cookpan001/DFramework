@@ -3,7 +3,7 @@ namespace DF\Base;
 
 class Database
 {
-    const DB_NAME = 'config';
+    const DB_NAME = 'main';
     
     protected static $pool = array();
     protected static $data_fields = array();
@@ -13,7 +13,7 @@ class Database
     
     public static function getConf($master = false, $type = '')
     {
-        $dbConfig = Config::getConfig(Config::CONFIG_DB);
+        $dbConfig = Config::getDb() + Config::getPool();
         if(!isset($dbConfig[$type])){
             return false;
         }
@@ -32,6 +32,16 @@ class Database
         return $setting[$selected];
     }
     
+    public static function init()
+    {
+        if(null === self::$partitions){
+            self::$partitions = Config::getTables();
+            foreach(self::$partitions as $t => $info){
+                self::$partitions[$t]['num'] = array_sum($info['database']);
+            }
+        }
+    }
+
     protected static function getConnection($master = false, $dbName = '')
     {
         if(empty($dbName)){
@@ -73,9 +83,7 @@ class Database
      */
     public static function getTableName($arr = array(), $table = '')
     {
-        if(null === self::$partitions && file_exists(CONFIG_PATH . 'tables.json')){
-            self::$partitions = json_decode(trim(file_get_contents(CONFIG_PATH . 'tables.json')), true);
-        }
+        self::init();
         if(empty($table)){
             $table = static::TABLE_NAME;
         }
@@ -166,18 +174,17 @@ class Database
      */
     public static function getDbName($serial = 0)
     {
-        if($serial == 0){
-            return static::DB_NAME;
-        }
-        if(null === self::$partitions && file_exists(CONFIG_PATH . 'tables.json')){
-            self::$partitions = json_decode(trim(file_get_contents(CONFIG_PATH . 'tables.json')), true);
-        }
+        self::init();
         //没有多表配置, 认为只有一张表
         if(!isset(self::$partitions[static::TABLE_NAME])){
             return static::DB_NAME;
         }
         if(!isset(self::$partitions[static::TABLE_NAME]['database'])){
             return static::DB_NAME;
+        }
+        //使用连接池
+        if(!empty(self::$partitions[static::TABLE_NAME]['usePool'])){
+            return self::$partitions[static::TABLE_NAME]['usePool'];
         }
         $dbs = self::$partitions[static::TABLE_NAME]['database'];
         if(count($dbs) == 1){
@@ -314,26 +321,82 @@ class Database
         return $ret;
     }
     
+    public static function union($whereArr = array(), $option = array(), $fields = array())
+    {
+        $ret = array();
+        $option['multi'] = true;
+        $id = isset($option['id']) ? $option['id'] : '';
+        $overwrite = isset($option['overwrite']) ? $option['overwrite'] : null;
+        $value = isset($option['value']) ? $option['value'] : null;
+        $sqls = array();
+        foreach($whereArr as $where){
+            $tableSetting = self::getTableName($where);
+            $multi = self::checkMulti($tableSetting);
+            foreach($multi as $dbName => $serials){
+                $db = self::getConnection(false, $dbName);
+                foreach($serials as $serial){
+                    $tableName = $tableSetting[$serial];
+                    $sqls[$dbName][] = '(' . $db->select($tableName, $where, $option, $fields) . ')';
+                }
+            }
+        }
+        foreach($sqls as $dbName => $ss){
+            $db = self::getConnection(false, $dbName);
+            $tmp = $db->query(implode(' UNION ', $ss), $id, $overwrite, $value);
+            if(isset($tmp[0])){
+                $ret = array_merge($ret, $tmp);
+            }else{
+                $ret += $tmp;
+            }
+        }
+        return $ret;
+    }
+    
     public static function getOne($where = array(), $option = array(), $fields = array())
     {
         $arRet = self::getData($where, $option, $fields);
         return !empty($arRet) ? $arRet[0] : array();
     }
     
+    public static function pluck($where, $key)
+    {
+        $arRet = self::getOne($where, array(), array($key));
+        return isset($arRet[$key]) ? $arRet[$key] : null;
+    }
+    /**
+     * 根据条件返回Key-Value数组, key值相同会被覆盖
+     * @param array $where
+     * @param mixed $k
+     * @param mixed $v
+     * @param array $ops
+     * @return array
+     */
     public static function getKv($where, $k, $v, $ops = array())
     {
-        $fields = array();
-        if(is_array($k)){
-            $fields = $k;
-            array_push($fields, $v);
-        }else{
-            $fields = array($k, $v);
-        }
+        $fields = array_merge((array)$k, (array)$v);
         $option = array('id'=>$k, 'value'=>$v, 'overwrite'=>true);
         foreach($ops as $op => $ov){
             $option[$op] = $ov;
         }
-        $arRet = self::getData($where, $option, $fields);
+        $arRet = self::getData($where, $option, array_unique($fields));
+        return !empty($arRet) ? $arRet : array();
+    }
+    /**
+     * 根据条件返回Key-Value数组, 不会覆盖key值相同的值, Value是数组
+     * @param array $where
+     * @param mixed $k
+     * @param mixed $v
+     * @param array $ops
+     * @return array
+     */
+    public static function getMap($where, $k, $v, $ops = array())
+    {
+        $fields = array_merge((array)$k, (array)$v);
+        $option = array('id'=>$k, 'value'=>$v);
+        foreach($ops as $op => $ov){
+            $option[$op] = $ov;
+        }
+        $arRet = self::getData($where, $option, array_unique($fields));
         return !empty($arRet) ? $arRet : array();
     }
     
@@ -378,9 +441,7 @@ class Database
         if(!isset($arr[0])){
             return array(0 => $arr);
         }
-        if(null === self::$partitions && file_exists(CONFIG_PATH . 'tables.json')){
-            self::$partitions = json_decode(trim(file_get_contents(CONFIG_PATH . 'tables.json')), true);
-        }
+        self::init();
         //没有多表配置, 认为只有一张表
         if(!isset(self::$partitions[static::TABLE_NAME])){
             return array(0 => $arr);

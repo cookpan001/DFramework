@@ -1,0 +1,9 @@
+{
+    "k_accumulate_report": {
+        "database": {
+            "main": 8
+        },
+        "primary": "groupShopId",
+        "type": "mod"
+    }
+}

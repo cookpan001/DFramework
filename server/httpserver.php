@@ -1,5 +1,6 @@
 <?php
 define('IN_SWOOLE', true);
+define('APP_NAME', 'httpserver');
 include dirname(__DIR__).DIRECTORY_SEPARATOR.'base.php';
 $server = new swoole_http_server('0.0.0.0', 9501);
 $server->set(

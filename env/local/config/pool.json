@@ -1,0 +1,10 @@
+{
+    "pool": {
+        "master": [
+            "local_pool"
+        ],
+        "slave": [
+            "local_pool"
+        ]
+    }
+}

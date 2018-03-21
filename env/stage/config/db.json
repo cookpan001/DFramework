@@ -1,0 +1,10 @@
+{
+    "main": {
+        "master": [
+            "online_main"
+        ],
+        "slave": [
+            "online_main"
+        ]
+    }
+}

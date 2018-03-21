@@ -1,0 +1,28 @@
+{
+    "pool": {
+        "master": [
+            {
+                "host": "localhost",
+                "port": 3307,
+                "user": "test",
+                "password": "test",
+                "database": "test",
+                "charset": "utf8",
+                "timeout": 2,
+                "pool": true
+            }
+        ],
+        "slave": [
+            {
+                "host": "localhost",
+                "port": 3307,
+                "user": "test",
+                "password": "test",
+                "database": "test",
+                "charset": "utf8",
+                "timeout": 2,
+                "pool": true
+            }
+        ]
+    }
+}

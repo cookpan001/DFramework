@@ -1,8 +1,9 @@
 <?php
 define('IN_SWOOLE', true);
+define('APP_NAME', 'mysqlpool');
 include dirname(__DIR__).DIRECTORY_SEPARATOR.'base.php';
 
-class Server
+class MysqlPoolServer
 {
     private $serv;
     private $pool;
@@ -13,7 +14,7 @@ class Server
     {
         $this->serv = new swoole_server("0.0.0.0", 3307);
         $config = array(
-            'worker_num' => 8,
+            'worker_num' => 20,
             'daemonize' => false,
             'max_request' => 10000,
             'dispatch_mode' => 2,
@@ -37,6 +38,7 @@ class Server
         $this->serv->set($config);
         $this->pool = new \DF\Async\MysqlPool(50);
         $this->serv->on('Receive', array($this, 'onReceive'));
+        $this->serv->on('WorkerStart', array($this, 'onWorkerStart'));
         $this->serv->start();
     }
     
@@ -64,40 +66,75 @@ class Server
             }else{
                 $arr = $commands;
             }
-            foreach($arr as $sql) {
-                $this->pool->query($sql, $fd, $dbname, function($db, $result) use ($serv, $fd){
-                    //出错的时候，db表示错误的字符串
+            $count = count($arr);
+            //协程，处理多条语句查询
+            $coroutine = function() use ($count, $serv, $fd){
+                $num = $count;
+                $head = array(
+                    //error, errno, insert_id, affected_rows, count
+                    'error' => '', 
+                    'errno' => 0,
+                    'insert_id' => 0 ,
+                    'affected_rows' => 0,
+                    'count' => 0,
+                );
+                $fields = array();
+                $data = array();
+                while($num){
+                    $send = (yield);
+                    \DF\Base\Log::info("coroutine, 1");
+                    list($db, $result) = $send;
+                    //内部出错的时候，db表示错误的字符串
                     if(is_null($result)){
-                        $head = array(
-                            $db,1,0,0,0,
-                        );
-                        $str = $this->protocol->serialize(array($head, [], []));
+                        $head['error'] = $db;
+                        $str = $this->protocol->serialize(array(array_values($head), [], []));
                         $serv->send($fd, $str);
                         return;
                     }
-                    $head = array(
-                        $db->error,
-                        $db->errno,
-                        $db->insert_id,
-                        $db->affected_rows,
-                        count($result),
-                    );
-                    $fields = array();
-                    $data = array();
-                    if(empty($db->errno) && $result){
-                        foreach($result as $line){
-                            if(empty($fields)){
-                                $fields = array_keys($line);
-                            }
-                            $data[] = array_values($line);
-                        }
+                    //mysql出错
+                    if($db->errno){
+                        $head['error'] = $db->error;
+                        $head['errno'] = $db->errno;
+                        $str = $this->protocol->serialize(array(array_values($head), [], []));
+                        $serv->send($fd, $str);
+                        return;
                     }
-                    $str = $this->protocol->serialize(array($head, $fields, $data));
-                    $serv->send($fd, $str);
-                    $this->pool->release($db);
-                });
+                    if($db->insert_id){
+                        $head['insert_id'] = $db->insert_id > $head['insert_id'] ? $db->insert_id : $head['insert_id'];
+                        continue;
+                    }
+                    if($db->affected_rows){
+                        $head['affected_rows'] += $db->affected_rows;
+                        continue;
+                    }
+                    foreach($result as $line){
+                        if(empty($fields)){
+                            $fields = array_keys($line);
+                        }
+                        $data[] = array_values($line);
+                    }
+                    $head['count'] += count($result);
+                    --$num;
+                }
+                \DF\Base\Log::info("coroutine, 2");
+                $str = $this->protocol->serialize(array(array_values($head), $fields, $data));
+                \DF\Base\Log::info("coroutine, 3");
+                $serv->send($fd, $str);
+            };
+            $gen = $coroutine();
+            $processFunc = function($db, $result) use ($gen){
+                $gen->send([$db, $result]);
+                $this->pool->release($db);
+            };
+            foreach($arr as $sql) {
+                $this->pool->query($sql, $fd, $dbname, $processFunc);
             }
         }
     }
+    
+    public function onWorkerStart($server, $worker_id)
+    {
+        $this->pool->init();
+    }
 }
-new Server();
+new MysqlPoolServer();

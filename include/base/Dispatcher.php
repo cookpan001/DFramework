@@ -4,8 +4,6 @@ namespace DF\Base;
 class Dispatcher
 {
     private $pool = array();
-    //保存request_uri到class_name的映射
-    private $map = array();
     
     public function __construct() {
         
@@ -26,39 +24,35 @@ class Dispatcher
     private function getAction()
     {
         $uri = $this->getUri();
-        if(isset($this->map[$uri])){
-            if(is_array($this->map[$uri])){
-                return $this->map[$uri];
-            }
-            return 404;
-        }
         $arr = explode('/', $uri);
-        if(!isset($arr[1])){
+        if(count($arr) < 2){
             return 404;
         }
-        if ($arr[1] == 'api') {
-            if (count($arr) < 3) {
-                return 404;
-            }
-            $className = ROOT_NAMESPACE . '\\Controller\\' . ucfirst($arr[0]) . '\\' . ucfirst($arr[2]);
-            if (!isset($arr[3])) {
-                $method = 'run';
-            } else {
-                $method = ucfirst(strtolower($arr[3])) . 'Action';
-            }
-        } else {
-            if (count($arr) < 3) {
-                return 404;
-            }
-            $className = ROOT_NAMESPACE . '\\Controller\\' . ucfirst($arr[0]) . '\\' . ucfirst($arr[1]);
-            if (!isset($arr[2])) {
-                $method = 'run';
-            } else {
-                $method = ucfirst(strtolower($arr[3])) . 'Action';
+        $className = null;
+        $module = lcfirst(array_shift($arr));
+        $func = lcfirst(array_shift($arr));
+        $isThreePart = false;
+        if(!empty($arr)){
+            //search module/func/action in INCLUDE_PATH first
+            if(file_exists(INCLUDE_PATH . 'controller'. DIRECTORY_SEPARATOR . $module . DIRECTORY_SEPARATOR . $func . DIRECTORY_SEPARATOR . ucfirst($arr[0]) . '.php')){
+                $action = array_shift($arr);
+                $className = ROOT_NAMESPACE . '\\Controller\\' . ucfirst($module) . '\\' . ucfirst($func) . '\\' . ucfirst($action);
+                $isThreePart = true;
             }
         }
-        $this->map[$uri] = array($className, $method);
-        return $this->map[$uri];
+        if($className && !class_exists($className)){
+            $className = null;
+        }
+        //if no class found above, search for module/func/Index.php and module/func.php.
+        if(empty($className)){
+            if(file_exists(INCLUDE_PATH . 'controller'. DIRECTORY_SEPARATOR . $module . DIRECTORY_SEPARATOR . $func . DIRECTORY_SEPARATOR . 'Index.php')){
+                $className[] = ROOT_NAMESPACE . '\\Controller\\' . ucfirst($module) . '\\' . ucfirst($func) . '\\Index';
+            }
+            if(file_exists(INCLUDE_PATH . 'controller'. DIRECTORY_SEPARATOR . $module . DIRECTORY_SEPARATOR . ucfirst($func) . '.php')){
+                $className[] = ROOT_NAMESPACE . '\\Controller\\' . ucfirst($module) . '\\' . ucfirst($func);
+            }
+        }
+        return array($className, $isThreePart, $arr);
     }
 
     public function run() {
@@ -67,17 +61,24 @@ class Dispatcher
             \DF\Http\HttpHeader::status(404);
             return;
         }
-        list($className, $method) = $arr;
-        if(!isset($this->pool[$className])){
-            $obj = new $className;
-            $this->pool[$className] = $obj;
-        }else{
-            $obj = $this->pool[$className];
+        list($classes, $isThreePart, $param) = $arr;
+        foreach((array)$classes as $className){
+            if(!isset($this->pool[$className])){
+                $obj = new $className;
+                $this->pool[$className] = $obj;
+            }else{
+                $obj = $this->pool[$className];
+            }
+            $method = 'run';
+            if(!$isThreePart && isset($param[0]) && method_exists($obj, $param[0].'Action')){
+                $method = $param[0].'Action';
+                array_shift($param);
+            }else if(!method_exists($obj, $method)){
+                continue;
+            }
+            return call_user_func_array(array($obj, $method), $param);
         }
-        if(!method_exists($obj, $method)){
-            \DF\Http\HttpHeader::status(404);
-            return;
-        }
-        $obj->$method();
+        \DF\Http\HttpHeader::status(404);
+        return;
     }
 }

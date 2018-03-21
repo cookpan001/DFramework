@@ -28,18 +28,33 @@ class Redis
     
     public static function connect($name)
     {
-        $config = Config::getConfig(Config::CONFIG_REDIS);
+        $config = Config::getRedis();
         if(!isset($config[$name])){
             return false;
         }
         $timeout = isset($config[$name]['timeout']) ? $config[$name]['timeout'] : 0;
-        $redis = new \Redis();
-        $redis->pconnect($config[$name]['host'], $config[$name]['port'], $timeout, $name);
-        if(isset($config[$name]['password'])){
-            $ret = $redis->auth($config[$name]['password']);
-            if(!$ret){
-                return false;
+        $password = isset($config[$name]['password']) ? $config[$name]['password'] : 0;
+        if(extension_loaded('redis')){
+            $redis = new \Redis();
+            $redis->pconnect($config[$name]['host'], $config[$name]['port'], $timeout, $name);
+            if($password){
+                $ret = $redis->auth($config[$name]['password']);
+                if(!$ret){
+                    return false;
+                }
             }
+        }else if(class_exists('\Predis\Client')){
+            $options = array();
+            if($password){
+                $options = [
+                    'parameters' => [
+                        'password' => $password,
+                    ],
+                ];
+            }
+            $redis = new \Predis\Client("tcp://{$config[$name]['host']}:{$config[$name]['port']}", $options);
+        }else{
+            $redis = new \DF\Sys\RedisClient($config[$name]['host'], $config[$name]['port'], $timeout, $password);
         }
         return $redis;
     }
@@ -56,8 +71,11 @@ class Redis
             $args[0] = $sha1;
             $ret = call_user_func_array(array($this->client, 'evalsha'), $args);
             return $ret;
-        } catch (Exception $ex) {
-            
+        } catch (\Exception $ex) {
+            if($ex->getMessage() == 'NOSCRIPT No matching script. Please use EVAL.'){
+                $args[0] = $script;
+                return call_user_func_array(array($this->client, 'eval'), $args);
+            }
         }
         return null;
     }
@@ -73,9 +91,14 @@ class Redis
                 $ret = call_user_func_array(array($this, 'evalsha'), $arguments);
                 return $ret;
             }
+            $config = Config::getRedis();
+            $prefix = isset($config[$this->name]['prefix']) ? $config[$this->name]['prefix'] : '';
+            $t1 = microtime(true);
             $ret = call_user_func_array(array($client, $name), $arguments);
+            $t2 = microtime(true);
+            \DF\Base\Log::redis($this->name, $name, ($t2 - $t1) * 1000, ...$arguments );
             return $ret;
-        } catch (Exception $exc) {
+        } catch (\Exception $exc) {
             return false;
         }
     }

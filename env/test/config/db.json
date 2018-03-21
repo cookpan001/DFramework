@@ -1,0 +1,10 @@
+{
+    "main": {
+        "master": [
+            "test_main"
+        ],
+        "slave": [
+            "test_main"
+        ]
+    }
+}

@@ -1,0 +1,12 @@
+{
+    "ImportReportDataCron": {
+        "name": "从expense_material导入数据到k_accumulate_report",
+        "timeout": 50,
+        "batch": 600
+    },
+    "FixReportDataCron": {
+        "name": "修复expense_material数据到k_accumulate_report",
+        "timeout": 40,
+        "batch": 500
+    }
+}

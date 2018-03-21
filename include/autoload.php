@@ -3,6 +3,7 @@ class MyAutoload
 {
     public $classMap = array(
         'DF' => array(INCLUDE_PATH),
+        'DF\Admin' => array(ADMIN_PATH),
     );
     
     public function __autoload($class_name)
@@ -12,9 +13,11 @@ class MyAutoload
                 continue;
             }
             $left = str_replace($namespace, '', $class_name);
-            $dir = str_replace('\\', DIRECTORY_SEPARATOR, trim($left, '\\'));
+            $arr = explode('\\', trim($left, '\\'));
+            $classFile = array_pop($arr);
+            $dir = strtolower(implode(DIRECTORY_SEPARATOR, $arr));
             foreach($tmp as $path){
-                $filepath = $path . DIRECTORY_SEPARATOR . $dir . '.php';
+                $filepath = $path . $dir . DIRECTORY_SEPARATOR . $classFile . '.php';
                 if(file_exists($filepath)){
                     require $filepath;
                     return true;

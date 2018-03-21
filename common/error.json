@@ -1,0 +1,12 @@
+{
+    "common": {
+        "100001": ["INVALID_REQUEST", " 无效的请求"],
+        "100002": ["BAD_PARAM", " 参数错误"]
+    },
+    "shop": {
+        "200001": ["INVALID_SHOPID", "无效的ShopId"]
+    },
+    "user": {
+        "201001": ["INVALID_USERID", "无效的UserId"]
+    }
+}

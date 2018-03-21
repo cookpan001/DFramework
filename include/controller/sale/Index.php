@@ -6,7 +6,7 @@ class Index extends \DF\Base\Controller
 {
     public function run()
     {
-        $this->output(__FUNCTION__);
+        $this->output(__FUNCTION__ . json_encode(func_get_args()));
     }
     
     public function testAction()
@@ -16,14 +16,14 @@ class Index extends \DF\Base\Controller
     
     public function redisAction()
     {
-        $redis = \DF\Base\Redis::getInstance(\DF\Base\Key::REIDS_TEST);
+        $redis = \DF\Base\Redis::getInstance(\DF\Base\Setting::REDIS_MAIN);
         $info = $redis->info();
         $this->output($info);
     }
     
     public function mysqlAction()
     {
-        $info = \DF\Data\User::getData();
+        $info = \DF\Data\Goods::getData();
         $this->output($info);
     }
     
@@ -41,7 +41,7 @@ class Index extends \DF\Base\Controller
     
     public function lpushAction()
     {
-        $redis = \DF\Base\Redis::getInstance(\DF\Base\Key::REIDS_TEST);
+        $redis = \DF\Base\Redis::getInstance(\DF\Base\Setting::REDIS_MAIN);
         $key = 'hello';
         $redis->lpush($key, 'world', 1, 2, "haha");
         call_user_func_array(array($redis, 'lpush'), array($key, 'first', 'second', 'third'));

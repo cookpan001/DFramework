@@ -15,10 +15,9 @@ class MysqlPool
     protected $fd2db = array();//客户端连接对数据库连接的映射，考虑用在事务
     protected $waiting = array();//等待数据库连接的客户端
 
-
     public function __construct($max = 5)
     {
-        $this->config = Config::getConfig(Config::CONFIG_DB);
+        $this->config = Config::getDb();
         $this->max['master'] = $max;
         $this->max['slave'] = $max * 2;
     }
@@ -34,6 +33,35 @@ class MysqlPool
     function __destruct()
     {
         $this->close();
+    }
+    
+    public function init()
+    {
+        $master = 'slave';
+        foreach($this->config as $dbname => $arr){
+            $i = array_rand($arr[$master]);
+            $conn = new \swoole_mysql();
+            $conn->on('close', function ($db){
+                $this->remove($db);
+            });
+            $conn->connect($this->config[$dbname][$master][$i], function($db, $r) use ($dbname, $master){
+                if(false === $r){
+                    return;
+                    call_user_func_array($callback, array('connection failed for database: '.$dbname, null));
+                }
+                $hash = spl_object_hash($db);
+                $this->busy[$dbname][$master][$hash] = $db;
+                $this->connections[$hash] = array($dbname, $master);
+                $this->execute($db, 'show tables', function($db, $result) use ($dbname){
+                    if(false === $result){
+                        return;
+                    }
+                    foreach($result as $arr){
+                        $this->table2database[array_pop($arr)] = $dbname;
+                    }
+                });
+            });
+        }
     }
     /**
      * 创建一条连接
@@ -95,7 +123,11 @@ class MysqlPool
      */
     public function release($conn)
     {
+        if(is_string($conn)){
+            var_dump($conn);
+        }
         $hash = spl_object_hash($conn);
+        \DF\Base\Log::info("release {$hash}");
         if(isset($this->transactions[$hash])){
             return false;
         }
@@ -146,7 +178,10 @@ class MysqlPool
         $pattern = '#(?:(?:INSERT (?:[IGNORE\s+]*INTO))|UPDATE|(?:DELETE\s+FROM)|(?:SELECT\s+.*\s+FROM))\s+\`?(\w+)\`?#sim';
         preg_match($pattern, $sql, $matches);
         $tableName = array_pop($matches);
-        $config = Config::getConfig(Config::CONFIG_TABLES);
+        if(isset($this->table2database[$tableName])){
+            return $this->table2database[$tableName];
+        }
+        $config = Config::getTables();
         if(isset($config[$tableName]) && 1 == $config[$tableName]['num']){
             return key($config[$tableName]['database']);
         }
@@ -177,6 +212,7 @@ class MysqlPool
      */
     public function query($sql0, $fd, $dbname, $callback)
     {
+        \DF\Base\Log::info("$fd, query");
         $sql = trim($sql0);
         $prefix = strtolower(substr($sql, 0, 7));
         if($prefix == 'select'){
@@ -186,6 +222,7 @@ class MysqlPool
         }
         if(empty($dbname)){
             $dbname = $this->getDb($sql);
+            \DF\Base\Log::info("$fd, getDb");
         }
         if(isset($this->idle[$dbname][$master])){
             foreach($this->idle[$dbname][$master] as $hash => $conn){
@@ -196,5 +233,6 @@ class MysqlPool
             }
         }
         $this->create($dbname, $master, $sql, $callback);
+        \DF\Base\Log::info("$fd, create");
     }
 }

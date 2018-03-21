@@ -25,10 +25,11 @@ class HttpHeader
     {
         if(defined('IN_SWOOLE') && IN_SWOOLE){
             $_SERVER['response']->status($code);
+            $_SERVER['response']->end('');
         }else{
             header('HTTP/1.1 '.$code);
         }
-        $_SERVER['response']->end('');
+//        $_SERVER['response']->end('');
     }
 
     public static function header($data)

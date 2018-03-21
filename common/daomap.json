@@ -1,0 +1,10 @@
+{
+    "goods": "\\DF\\Data\\Goods",
+    "user": "\\DF\\Data\\User",
+    "k_accumulate_report": "\\DF\\Data\\sheet\\AccumulateReportData",
+    "expenses": "\\DF\\Data\\shop\\ExpenseData",
+    "expense_material": "\\DF\\Data\\shop\\ExpenseMaterialData",
+    "material": "\\DF\\Data\\shop\\MaterialData",
+    "shop_parameter": "\\DF\\Data\\shop\\ShopParameterData",
+    "shops": "\\DF\\Data\\shop\\ShopsData"
+}

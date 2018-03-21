@@ -1,0 +1,10 @@
+{
+    "main": {
+        "master": [
+            "local_main"
+        ],
+        "slave": [
+            "local_main"
+        ]
+    }
+}
